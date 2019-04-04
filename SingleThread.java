@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.Date;
+import java.util.Scanner;
 
 public class SingleThread extends Thread
 {
@@ -33,7 +34,7 @@ public class SingleThread extends Thread
             }
             if (!httpRequest.equals("")) {
                 String[] request = httpRequest.split(" ");
-                System.out.println("Client HTTP Request: " + CRLF + httpRequest);
+                System.out.println("Client HTTP Request Header: " + CRLF + httpRequest);
                 if (request[0].equals("GET")) // if line contains get
                 {
                     //extract the html filename
@@ -41,6 +42,32 @@ public class SingleThread extends Thread
                         request[1] = "/index.html";
                     FilePath += request[1];
                     processRequestGET(FilePath); // process the request
+                }
+                else if (request[0].equals("POST"))
+                {
+                    String requestBody = "";
+                    while(((line = in.readLine()) != null) && !line.equals("") && !line.equals(CRLF))
+                    {
+                        requestBody += line;
+                        requestBody += CRLF;
+                    }
+                    FilePath += request[1];
+                    System.out.println("Client HTTP Request Body: " + CRLF + requestBody);
+                    processRequestPOST(FilePath, requestBody);
+                }
+                else if(request[0].equals("DELETE"))
+                {
+                    FilePath += request[1];
+                    System.out.println("INSIDE DELETE: " + FilePath);
+                    File file = new File(FilePath);
+                    if(file.delete())
+                    {
+                        System.out.println(FilePath + " has been deleted");
+                    }
+                    else
+                    {
+                        System.out.println("File cannot be found");
+                    }
                 }
             }
 
@@ -57,12 +84,11 @@ public class SingleThread extends Thread
     {
         File file = new File(FilePath); //create a file variable
         if(file.exists() && FilePath.contains(".html")) // if file exists
+        {if(file.exists() && FilePath.contains(".html")) // if file exists
         {
-            //create a BufferedReader to read the file content
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-
+            Scanner reader = new Scanner(new File (FilePath));
             //sent the HTTP head (HTTP 200 OK)
-            out.print("HTTP/1.1 200 OK" + CRLF);
+            out.print("HTTP/1.0 200 OK" + CRLF); // HTTP/1.1 results in a failure in showing the content of the file
             Date date = new Date();
             out.print("Date: " + date.toString() + CRLF);
             out.print("Server: java tiny web server" + CRLF);
@@ -72,10 +98,13 @@ public class SingleThread extends Thread
             //end of http header
 
             String line = "";
-            while((line = reader.readLine()) != null) //read a line from the html file
+            while(reader.hasNextLine()) //read a line from the html file
             {
+                line = reader.nextLine();
                 out.println(line); //write the line to the socket connection
             }
+            reader.close(); // must close reader to allow further access of file
+        }
         }
         else if (!file.exists()) //if file does not exists
         {
@@ -90,12 +119,14 @@ public class SingleThread extends Thread
 
             //send file not found message
             file = new File("D:/htdocs/404.html");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+            Scanner reader = new Scanner(new FileReader(file));
             String line;
-            while ((line = reader.readLine()) != null)
+            while (reader.hasNextLine())
             {
+                line = reader.nextLine();
                 out.println(line);
             }
+            reader.close();
         }
         else
         {
@@ -110,21 +141,39 @@ public class SingleThread extends Thread
 
             //send file not found message
             file = new File("D:/htdocs/415.html");
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+            Scanner reader = new Scanner(new FileReader(file));
             String line;
-            while ((line = reader.readLine()) != null)
+            while (reader.hasNextLine())
             {
+                line = reader.nextLine();
                 out.println(line);
             }
-
+            reader.close();
         }
+    }
+
+    public void processRequestPOST(String FilePath, String RequestBody) throws Exception {
+
+        File file = new File(FilePath);
+        FileWriter writer = new FileWriter(FilePath);
+        if (file.exists())
+        {
+            writer.flush();
+        }
+        else
+        {
+            file.createNewFile();
+        }
+        writer.write(RequestBody);
+        writer.flush();
+        processRequestGET(FilePath);
+        writer.close();
     }
 
     private void closeConnection()
     {
         try
         {
-            System.out.println("\nClient disconnected!\n");
             out.close(); // close output stream
             in.close(); // close input stream
             socket.close(); //close socket

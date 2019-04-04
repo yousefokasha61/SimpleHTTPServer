@@ -13,7 +13,7 @@ public class MainServer {
             while(true)
             {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("\nA client connected!\n");
+                System.out.println("\nA New Request Has Arrived!\n");
                 SingleThread SingleThread = new SingleThread(clientSocket);//create a new thread for each client
                 SingleThread.start();
             }
