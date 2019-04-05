@@ -9,31 +9,52 @@ public class Client {
         Socket socket = new Socket("127.0.0.1", 8080);
         Scanner userInput = new Scanner(System.in), socketInput = new Scanner(socket.getInputStream());
         PrintStream socketOutput = new PrintStream(socket.getOutputStream());
-        String message;
-        System.out.print("Enter HTTP Request Header: ");
-        message = userInput.nextLine();
-        String line;
-        String RequestBody = "";
-        if (message.contains("GET"))
+        System.out.println("What function would you like to do?:\n" +
+                "1- GET\n" +
+                "2- POST\n" +
+                "3- DELETE\n");
+        int choice;
+        choice = userInput.nextInt();
+        String URL, Request = "";
+        if (choice == 1)
         {
-            socketOutput.print(message + "\r\n\r\n");
+            System.out.print("Enter URL: ");
+            Request += "GET ";
+            URL = userInput.next();
+            Request += URL;
+            Request += " HTTP/1.1";
+            Request += "\r\n\r\n";
         }
-        if (message.contains("POST")) {
-            while (true) {
+        if (choice == 2)
+        {
+            System.out.println("Enter URL: ");
+            Request += "POST ";
+            URL = userInput.next();
+            Request += URL;
+            Request += " HTTP/1.1";
+            Request += "\r\n";
+            System.out.println("Enter Body (DONE! to stop): \n");
+            String line;
+            while(true)
+            {
                 line = userInput.nextLine();
-                if (line.equals("FINISHED"))
+                if (line.equals("DONE!"))
                     break;
-                RequestBody += line;
-                RequestBody += "\r\n";
+                Request += line;
+                Request += "\r\n";
             }
-            RequestBody += "\r\n\r\n";
-            socketOutput.print(message + "\r\n\r\n");
-            socketOutput.print(RequestBody);
+            Request += "\r\n\r\n";
         }
-        else if (message.contains("DELETE"))
+        else if (choice == 3)
         {
-            socketOutput.print(message + "\r\n\r\n");
+            System.out.print("Enter URL: ");
+            Request += "DELETE ";
+            URL = userInput.next();
+            Request += URL;
+            Request += " HTTP/1.1";
+            Request += "\r\n\r\n";
         }
+        socketOutput.print(Request);
         while(socketInput.hasNextLine())
             System.out.println(socketInput.nextLine());
 
